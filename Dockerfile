@@ -1,32 +1,35 @@
-FROM python:3.11-slim
+FROM python:3.11.0b1-buster
 
-# Set working directory
+# set work directory
 WORKDIR /app
 
-# Install system dependencies required for runtime (no compiler needed now)
+
+# dependencies for psycopg2
 RUN apt-get update && apt-get install --no-install-recommends -y \
     dnsutils \
     libpq-dev \
     python3-dev \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Install Python dependencies
+
+# Install dependencies
 RUN python -m pip install --no-cache-dir pip==22.0.4
-COPY requirements.txt .
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . .
 
-# Apply Django migrations
-RUN python3 manage.py migrate
+# copy project
+COPY . /app/
 
-# Expose port and run the app
+
+# install pygoat
 EXPOSE 8000
+
+
+RUN python3 /app/manage.py migrate
 WORKDIR /app/pygoat/
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "6", "pygoat.wsgi"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers","6", "pygoat.wsgi"]
